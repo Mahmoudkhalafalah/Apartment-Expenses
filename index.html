@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تتبع مصاريف التشطيب الاحترافي</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --bg: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #2d3436;
+            --text-sub: #636e72;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0;
+            background: linear-gradient(135deg, var(--primary), #34495e);
+            color: white;
+            border-radius: 0 0 25px 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        /* Dashboard Stats */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-bottom: 4px solid var(--accent);
+        }
+
+        .stat-card.total { border-color: var(--success); }
+        .stat-card h3 { font-size: 0.85rem; color: var(--text-sub); margin: 0; }
+        .stat-card p { font-size: 1.4rem; font-weight: bold; margin: 10px 0 0; color: var(--primary); }
+
+        /* Forms & Controls */
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .grid-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .input-group { display: flex; flex-direction: column; }
+        .input-group label { font-size: 0.85rem; margin-bottom: 5px; font-weight: 600; }
+        .input-group input, .input-group select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.3s;
+        }
+
+        .btn-add { background: var(--success); color: white; width: 100%; margin-top: 15px; }
+        .btn-backup { background: var(--primary); color: white; }
+        .btn-import { background: var(--accent); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: right; font-size: 0.8rem; color: var(--text-sub); padding: 10px; border-bottom: 2px solid #eee; }
+        td { padding: 12px 10px; border-bottom: 1px solid #f5f5f5; }
+        .item-name { font-weight: 600; }
+        .item-details { color: var(--text-sub); font-size: 0.8rem; }
+        .amount { font-family: monospace; font-weight: bold; color: var(--primary); }
+
+        .action-btns { display: flex; gap: 20px; margin-top: 20px; justify-content: center; background: #eee; padding: 15px; border-radius: 12px; }
+
+        @media print {
+            .no-print { display: none !important; }
+            .card { box-shadow: none; border: 1px solid #eee; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container">
+        <h1>🏠 داشبورد مصاريف التشطيب</h1>
+        <p>بياناتك محفوظة بأمان على جهازك</p>
+    </div>
+</header>
+
+<div class="container">
+    
+    <div class="card no-print" style="border-right: 5px solid var(--warning);">
+        <h3 style="margin-top:0">🛡️ حماية البيانات</h3>
+        <p style="font-size: 0.85rem; color: var(--text-sub);">عشان بياناتك متضيعش، حمل نسخة احتياطية بعد كل إضافة كبيرة، وتقدر ترفعها في أي وقت لو فتحت الملف من جهاز تاني.</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn btn-backup" onclick="exportData()">📥 تحميل نسخة احتياطية (Download)</button>
+            <button class="btn btn-import" onclick="document.getElementById('fileInput').click()">📤 رفع نسخة احتياطية (Upload)</button>
+            <input type="file" id="fileInput" style="display:none" onchange="importData(event)">
+        </div>
+    </div>
+
+    <div class="card no-print">
+        <h3>➕ إضافة بند جديد</h3>
+        <form id="expenseForm">
+            <div class="grid-form">
+                <div class="input-group">
+                    <label>الفئة</label>
+                    <select id="category" required>
+                        <option value="أجهزة وأثاث">أجهزة وأثاث</option>
+                        <option value="مواد بناء وخامات">مواد بناء وخامات</option>
+                        <option value="مصنعيات وعمالة">مصنعيات وعمالة</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>اسم البند</label>
+                    <input type="text" id="itemName" placeholder="مثال: خلاطات الحمام" required>
+                </div>
+                <div class="input-group">
+                    <label>المبلغ (ج.م)</label>
+                    <input type="number" id="itemAmount" placeholder="0" required>
+                </div>
+                <div class="input-group">
+                    <label>ملاحظات / دفعات</label>
+                    <input type="text" id="itemNotes" placeholder="مثال: دفعة استلام">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-add">حفظ الإضافة</button>
+        </form>
+    </div>
+
+    <div class="dashboard">
+        <div class="stat-card total">
+            <h3>الإجمالي الكلي</h3>
+            <p id="totalSum">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>أجهزة وأثاث</h3>
+            <p id="cat1Sum">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>مواد وخامات</h3>
+            <p id="cat2Sum">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>مصنعيات</h3>
+            <p id="cat3Sum">0</p>
+        </div>
+    </div>
+
+    <div id="tablesContainer"></div>
+
+    <div class="action-btns no-print">
+        <button class="btn btn-backup" style="background:#2ecc71" onclick="window.print()">🖨️ طباعة التقرير</button>
+        <button class="btn btn-danger" onclick="clearData()">🗑️ مسح كل البيانات</button>
+    </div>
+</div>
+
+<script>
+    // Initial data from your original list
+    const initialData = [
+        { id: 1, cat: "أجهزة وأثاث", name: "تغيير الغاز", amount: 4000, note: "-" },
+        { id: 2, cat: "أجهزة وأثاث", name: "شاشة تلفزيون", amount: 35000, note: "-" },
+        { id: 3, cat: "أجهزة وأثاث", name: "فلتر مياه", amount: 1200, note: "-" },
+        { id: 4, cat: "أجهزة وأثاث", name: "ديسبنسر مياه", amount: 9000, note: "-" },
+        { id: 5, cat: "أجهزة وأثاث", name: "مراوح", amount: 6200, note: "-" },
+        { id: 6, cat: "أجهزة وأثاث", name: "غرف النوم", amount: 83000, note: "3 دفعات (50000+30000+3000)" },
+        { id: 7, cat: "مواد بناء وخامات", name: "خامات كهرباء", amount: 17360, note: "4 دفعات" },
+        { id: 8, cat: "مواد بناء وخامات", name: "خامات سباكة", amount: 77000, note: "تأسيس وتشطيب" },
+        { id: 9, cat: "مواد بناء وخامات", name: "جبسوم بورد", amount: 20000, note: "-" },
+        { id: 10, cat: "مواد بناء وخامات", name: "مواد بناء", amount: 7700, note: "-" },
+        { id: 11, cat: "مواد بناء وخامات", name: "لوازم سيراميك", amount: 4200, note: "-" },
+        { id: 12, cat: "مواد بناء وخامات", name: "لوازم نقاشة", amount: 11110, note: "-" },
+        { id: 13, cat: "مواد بناء وخامات", name: "ألوميتال", amount: 11000, note: "-" },
+        { id: 14, cat: "مصنعيات وعمالة", name: "كهربائي", amount: 5000, note: "-" },
+        { id: 15, cat: "مصنعيات وعمالة", name: "تعديل مطبخ وحمام", amount: 10500, note: "-" },
+        { id: 16, cat: "مصنعيات وعمالة", name: "محارة", amount: 4600, note: "-" },
+        { id: 17, cat: "مصنعيات وعمالة", name: "سباك", amount: 8000, note: "-" },
+        { id: 18, cat: "مصنعيات وعمالة", name: "تنظيف وتطليع", amount: 4400, note: "رتش وسيراميك" },
+        { id: 19, cat: "مصنعيات وعمالة", name: "سيراميك ونقاشة", amount: 12800, note: "مصنعية" },
+        { id: 20, cat: "مصنعيات وعمالة", name: "مناسبات", amount: 5500, note: "قاعة وميك أب" }
+    ];
+
+    let expenses = JSON.parse(localStorage.getItem('my_apt_expenses')) || initialData;
+
+    function updateUI() {
+        localStorage.setItem('my_apt_expenses', JSON.stringify(expenses));
+        
+        let total = 0, c1 = 0, c2 = 0, c3 = 0;
+        const groups = { "أجهزة وأثاث": [], "مواد بناء وخامات": [], "مصنعيات وعمالة": [] };
+
+        expenses.forEach(e => {
+            total += e.amount;
+            if(e.cat === "أجهزة وأثاث") c1 += e.amount;
+            if(e.cat === "مواد بناء وخامات") c2 += e.amount;
+            if(e.cat === "مصنعيات وعمالة") c3 += e.amount;
+            groups[e.cat].push(e);
+        });
+
+        document.getElementById('totalSum').innerText = total.toLocaleString() + " ج.م";
+        document.getElementById('cat1Sum').innerText = c1.toLocaleString() + " ج.م";
+        document.getElementById('cat2Sum').innerText = c2.toLocaleString() + " ج.م";
+        document.getElementById('cat3Sum').innerText = c3.toLocaleString() + " ج.م";
+
+        const container = document.getElementById('tablesContainer');
+        container.innerHTML = "";
+
+        for(let cat in groups) {
+            if(groups[cat].length === 0) continue;
+            let html = `<div class="card"><h3>${cat}</h3><table><thead><tr><th>البند</th><th>ملاحظات</th><th>المبلغ</th><th class="no-print">حذف</th></tr></thead><tbody>`;
+            groups[cat].forEach(item => {
+                html += `<tr><td class="item-name">${item.name}</td><td class="item-details">${item.note}</td><td class="amount">${item.amount.toLocaleString()}</td><td class="no-print"><button onclick="deleteItem(${item.id})" style="color:red; border:none; background:none; cursor:pointer">✖</button></td></tr>`;
+            });
+            html += `</tbody></table></div>`;
+            container.innerHTML += html;
+        }
+    }
+
+    document.getElementById('expenseForm').onsubmit = function(e) {
+        e.preventDefault();
+        expenses.push({
+            id: Date.now(),
+            cat: document.getElementById('category').value,
+            name: document.getElementById('itemName').value,
+            amount: parseFloat(document.getElementById('itemAmount').value),
+            note: document.getElementById('itemNotes').value || "-"
+        });
+        this.reset();
+        updateUI();
+    };
+
+    function deleteItem(id) {
+        if(confirm('متأكد انك عايز تمسح البند ده؟')) {
+            expenses = expenses.filter(e => e.id !== id);
+            updateUI();
+        }
+    }
+
+    // --- Safety Features ---
+
+    function exportData() {
+        const dataStr = JSON.stringify(expenses, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `حسابات_التشطيب_${new Date().toLocaleDateString('ar-EG')}.json`;
+        a.click();
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if(Array.isArray(imported)) {
+                    expenses = imported;
+                    updateUI();
+                    alert('تم استرجاع البيانات بنجاح!');
+                }
+            } catch (err) { alert('الملف غير صحيح!'); }
+        };
+        reader.readAsText(file);
+    }
+
+    function clearData() {
+        if(confirm('ده هيمسح كل حاجة وهيرجع الملف فاضي، متأكد؟')) {
+            expenses = [];
+            updateUI();
+        }
+    }
+
+    updateUI();
+</script>
+
+</body>
+</html>
