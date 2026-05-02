@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>داشبورد التشطيب (Google Sheets)</title>
     <style>
-        /* نفس التصميم الشيك بتاعنا */
         :root {
             --primary: #2c3e50; --accent: #3498db; --success: #27ae60;
-            --warning: #f39c12; --bg: #f4f7f6; --card-bg: #ffffff;
+            --warning: #f39c12; --danger: #e74c3c; --bg: #f4f7f6; --card-bg: #ffffff;
             --text-main: #2d3436; --text-sub: #636e72;
         }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 0; line-height: 1.6; }
@@ -21,12 +20,18 @@
         .stat-card h3 { font-size: 0.85rem; color: var(--text-sub); margin: 0; }
         .stat-card p { font-size: 1.4rem; font-weight: bold; margin: 10px 0 0; color: var(--primary); }
 
-        .card { background: var(--card-bg); padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.3s; }
         .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
         .input-group { display: flex; flex-direction: column; }
         .input-group label { font-size: 0.85rem; margin-bottom: 5px; font-weight: 600; }
         .input-group input, .input-group select { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
-        .btn-add { background: var(--success); color: white; width: 100%; margin-top: 15px; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: opacity 0.3s; }
+        
+        .btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-add { background: var(--success); color: white; width: 100%; margin-top: 15px; padding: 12px; font-size: 1rem; }
+        .btn-edit-mode { background: var(--warning); color: #fff; }
+        .action-btn { padding: 5px 10px; font-size: 0.8rem; margin-right: 5px; }
+        .btn-edit { background: var(--accent); color: white; }
+        .btn-delete { background: var(--danger); color: white; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { text-align: right; font-size: 0.8rem; color: var(--text-sub); padding: 10px; border-bottom: 2px solid #eee; }
@@ -53,12 +58,12 @@
     
     <div id="loading">
         <div class="loader"></div>
-        <p>جاري مزامنة البيانات مع جوجل شيت...</p>
+        <p id="loadingText">جاري مزامنة البيانات مع جوجل شيت...</p>
     </div>
 
-    <!-- Add Item Form -->
-    <div class="card">
-        <h3>➕ إضافة بند جديد للمحاسب</h3>
+    <!-- Add/Edit Form -->
+    <div class="card" id="formCard">
+        <h3 id="formTitle">➕ إضافة بند جديد</h3>
         <form id="expenseForm">
             <div class="grid-form">
                 <div class="input-group">
@@ -83,7 +88,8 @@
                     <input type="text" id="itemNotes" placeholder="-">
                 </div>
             </div>
-            <button type="submit" class="btn-add" id="submitBtn">حفظ ورفع لجوجل شيت</button>
+            <button type="submit" class="btn btn-add" id="submitBtn">حفظ ورفع لجوجل شيت</button>
+            <button type="button" class="btn" id="cancelEditBtn" style="display:none; width: 100%; margin-top: 10px; background: #95a5a6; color: white;" onclick="cancelEdit()">إلغاء التعديل</button>
         </form>
     </div>
 
@@ -113,33 +119,37 @@
 </div>
 
 <script>
-    // ⚠️⚠️⚠️ حط الرابط اللي أخدته من جوجل هنا بين علامتين التنصيص ⚠️⚠️⚠️
-    const GOOGLE_APP_URL = "https://script.google.com/macros/s/AKfycbxc9ZdNeJFXSKH6OREc-hubk4bNPUZkiWSxkNMFD6CLguanmRfSEf3lyxWkgPghaqyj/exec";
+    // ⚠️⚠️⚠️ حط الرابط اللي أخدته من جوجل هنا ⚠️⚠️⚠️
+    const GOOGLE_APP_URL = "https://script.google.com/macros/s/AKfycbxeH0B9ZYjjUWFUNsfT00H-VMd76uHZr9hSCSdNM1zxZGsBL7gNXqqPiwQHfjx5tSfy/exec";
 
     let expenses = [];
+    let editingId = null; // متغير عشان نعرف إحنا بنضيف ولا بنعدل
 
-    // دالة تحميل البيانات من جوجل شيت
+    // دالة إظهار وإخفاء التحميل
+    function showLoading(text) {
+        document.getElementById('loadingText').innerText = text;
+        document.getElementById('loading').style.display = 'block';
+    }
+    function hideLoading() {
+        document.getElementById('loading').style.display = 'none';
+    }
+
+    // 1. تحميل البيانات
     async function loadData() {
         if(GOOGLE_APP_URL === "ضع_الرابط_هنا") {
-            alert("لا تنسى وضع رابط الـ Web App الخاص بجوجل في الكود!");
-            return;
+            alert("لا تنسى وضع رابط الـ Web App الخاص بجوجل في الكود!"); return;
         }
-
-        document.getElementById('loading').style.display = 'block';
+        showLoading("جاري سحب البيانات من السحابة...");
         try {
             let response = await fetch(GOOGLE_APP_URL);
             let data = await response.json();
             expenses = data;
             updateUI();
-        } catch (error) {
-            console.error("Error loading data:", error);
-            alert("حدث خطأ أثناء تحميل البيانات من جوجل.");
-        } finally {
-            document.getElementById('loading').style.display = 'none';
-        }
+        } catch (error) { alert("حدث خطأ أثناء تحميل البيانات."); } 
+        finally { hideLoading(); }
     }
 
-    // دالة تحديث الشاشة والأرقام
+    // تحديث الشاشة
     function updateUI() {
         let total = 0, c1 = 0, c2 = 0, c3 = 0;
         const groups = { "أجهزة وأثاث": [], "مواد بناء وخامات": [], "مصنعيات وعمالة": [], "مناسبات": [] };
@@ -150,7 +160,6 @@
             if(e.category === "أجهزة وأثاث") c1 += amt;
             if(e.category === "مواد بناء وخامات") c2 += amt;
             if(e.category === "مصنعيات وعمالة" || e.category === "مناسبات") c3 += amt;
-            
             if(groups[e.category]) groups[e.category].push(e);
         });
 
@@ -164,56 +173,118 @@
 
         for(let cat in groups) {
             if(groups[cat].length === 0) continue;
-            let html = `<div class="card"><h3>${cat}</h3><table><thead><tr><th>البند</th><th>التفاصيل</th><th>المبلغ</th></tr></thead><tbody>`;
+            let html = `<div class="card"><h3>${cat}</h3><table><thead><tr><th>البند</th><th>التفاصيل</th><th>المبلغ</th><th style="text-align:center">إجراء</th></tr></thead><tbody>`;
             groups[cat].forEach(item => {
-                html += `<tr><td class="item-name">${item.name}</td><td class="item-details">${item.details}</td><td class="amount">${parseFloat(item.amount).toLocaleString()}</td></tr>`;
+                html += `
+                <tr>
+                    <td class="item-name">${item.name}</td>
+                    <td class="item-details">${item.details}</td>
+                    <td class="amount">${parseFloat(item.amount).toLocaleString()}</td>
+                    <td style="text-align:center; min-width: 120px;">
+                        <button class="btn action-btn btn-edit" onclick="startEdit(${item.id})">✏️ تعديل</button>
+                        <button class="btn action-btn btn-delete" onclick="deleteItem(${item.id})">🗑️ حذف</button>
+                    </td>
+                </tr>`;
             });
             html += `</tbody></table></div>`;
             container.innerHTML += html;
         }
     }
 
-    // دالة الإضافة لجوجل شيت
+    // 2. الحفظ (سواء إضافة جديدة أو تعديل)
     document.getElementById('expenseForm').onsubmit = async function(e) {
         e.preventDefault();
-        
         let btn = document.getElementById('submitBtn');
         btn.disabled = true;
-        btn.innerText = "جاري الرفع السحابي ☁️...";
 
-        let newItem = {
-            action: "add",
-            id: Date.now(),
+        let payload = {
+            action: editingId ? "edit" : "add",
+            id: editingId ? editingId : Date.now(),
             category: document.getElementById('category').value,
             name: document.getElementById('itemName').value,
             amount: document.getElementById('itemAmount').value,
             details: document.getElementById('itemNotes').value || "-"
         };
 
+        btn.innerText = "جاري التحديث في جوجل شيت ☁️...";
+
         try {
-            await fetch(GOOGLE_APP_URL, {
-                method: "POST",
-                body: JSON.stringify(newItem)
-            });
+            await fetch(GOOGLE_APP_URL, { method: "POST", body: JSON.stringify(payload) });
             
-            // اضافته للشاشة فورا عشان السرعة
-            expenses.push(newItem);
+            // تحديث البيانات على الشاشة فوراً
+            if(editingId) {
+                let index = expenses.findIndex(x => x.id == editingId);
+                expenses[index] = payload;
+                cancelEdit(); // نرجع للوضع العادي
+            } else {
+                expenses.push(payload);
+            }
+            
             updateUI();
             this.reset();
-            alert("تم الحفظ في جوجل شيت بنجاح!");
-        } catch(err) {
-            console.error("Error saving data:", err);
-            alert("حدث خطأ أثناء الحفظ، يرجى المحاولة مرة أخرى.");
-        } finally {
+        } catch(err) { alert("حدث خطأ، يرجى المحاولة مرة أخرى."); } 
+        finally {
             btn.disabled = false;
-            btn.innerText = "حفظ ورفع لجوجل شيت";
+            if(!editingId) btn.innerText = "حفظ ورفع لجوجل شيت";
         }
     };
 
-    // تشغيل التحميل أول ما الصفحة تفتح
+    // 3. أمر الحذف
+    async function deleteItem(id) {
+        if(!confirm("متأكد إنك عايز تحذف البند ده نهائياً؟")) return;
+        
+        showLoading("جاري الحذف من جوجل شيت...");
+        try {
+            await fetch(GOOGLE_APP_URL, { 
+                method: "POST", 
+                body: JSON.stringify({ action: "delete", id: id }) 
+            });
+            expenses = expenses.filter(x => x.id != id);
+            updateUI();
+        } catch(err) { alert("حدث خطأ أثناء الحذف."); }
+        finally { hideLoading(); }
+    }
+
+    // 4. تجهيز فورم التعديل
+    function startEdit(id) {
+        let item = expenses.find(x => x.id == id);
+        if(!item) return;
+
+        editingId = id;
+        document.getElementById('category').value = item.category;
+        document.getElementById('itemName').value = item.name;
+        document.getElementById('itemAmount').value = item.amount;
+        document.getElementById('itemNotes').value = item.details !== "-" ? item.details : "";
+
+        document.getElementById('formTitle').innerText = "✏️ تعديل البند";
+        document.getElementById('formCard').style.borderRight = "5px solid var(--warning)";
+        
+        let submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerText = "تحديث البيانات";
+        submitBtn.classList.remove('btn-add');
+        submitBtn.classList.add('btn-edit-mode');
+        
+        document.getElementById('cancelEditBtn').style.display = "block";
+        window.scrollTo(0, 0); // نطلع لفوق عند الفورم
+    }
+
+    // إلغاء التعديل والرجوع للإضافة
+    function cancelEdit() {
+        editingId = null;
+        document.getElementById('expenseForm').reset();
+        document.getElementById('formTitle').innerText = "➕ إضافة بند جديد";
+        document.getElementById('formCard').style.borderRight = "none";
+        
+        let submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerText = "حفظ ورفع لجوجل شيت";
+        submitBtn.classList.remove('btn-edit-mode');
+        submitBtn.classList.add('btn-add');
+        
+        document.getElementById('cancelEditBtn').style.display = "none";
+    }
+
+    // تشغيل التطبيق
     window.onload = loadData;
-
 </script>
-
 </body>
 </html>
