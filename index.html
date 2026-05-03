@@ -3,288 +3,309 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>داشبورد التشطيب (Google Sheets)</title>
+    <title>حسابات التشطيب الذكية</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
     <style>
-        :root {
-            --primary: #2c3e50; --accent: #3498db; --success: #27ae60;
-            --warning: #f39c12; --danger: #e74c3c; --bg: #f4f7f6; --card-bg: #ffffff;
-            --text-main: #2d3436; --text-sub: #636e72;
-        }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 0; line-height: 1.6; }
-        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
-        header { text-align: center; padding: 40px 0; background: linear-gradient(135deg, var(--primary), #34495e); color: white; border-radius: 0 0 25px 25px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        
-        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .stat-card { background: var(--card-bg); padding: 20px; border-radius: 15px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-bottom: 4px solid var(--accent); }
-        .stat-card.total { border-color: var(--success); }
-        .stat-card h3 { font-size: 0.85rem; color: var(--text-sub); margin: 0; }
-        .stat-card p { font-size: 1.4rem; font-weight: bold; margin: 10px 0 0; color: var(--primary); }
-
-        .card { background: var(--card-bg); padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.3s; }
-        .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
-        .input-group { display: flex; flex-direction: column; }
-        .input-group label { font-size: 0.85rem; margin-bottom: 5px; font-weight: 600; }
-        .input-group input, .input-group select { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
-        
-        .btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-add { background: var(--success); color: white; width: 100%; margin-top: 15px; padding: 12px; font-size: 1rem; }
-        .btn-edit-mode { background: var(--warning); color: #fff; }
-        .action-btn { padding: 5px 10px; font-size: 0.8rem; margin-right: 5px; }
-        .btn-edit { background: var(--accent); color: white; }
-        .btn-delete { background: var(--danger); color: white; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { text-align: right; font-size: 0.8rem; color: var(--text-sub); padding: 10px; border-bottom: 2px solid #eee; }
-        td { padding: 12px 10px; border-bottom: 1px solid #f5f5f5; }
-        .item-name { font-weight: 600; }
-        .item-details { color: var(--text-sub); font-size: 0.8rem; }
-        .amount { font-family: monospace; font-weight: bold; color: var(--primary); }
-        
-        #loading { display: none; text-align: center; padding: 20px; color: var(--accent); font-weight: bold; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--accent); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 10px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .header-bg { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; border-radius: 0 0 20px 20px; padding: 30px 0; margin-bottom: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .stat-card { border-radius: 15px; border: none; border-bottom: 4px solid #0d6efd; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-card.total { border-bottom-color: #198754; }
+        .amount-text { font-family: monospace; font-weight: bold; font-size: 1.1rem; }
+        .table-custom th { background-color: #f1f4f8; color: #495057; }
+        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; display: none; }
     </style>
 </head>
 <body>
 
-<header>
-    <div class="container">
-        <h1>🏠 داشبورد مصاريف التشطيب</h1>
-        <p>مربوط بجوجل شيت مباشرة ☁️</p>
-    </div>
-</header>
-
-<div class="container">
-    
-    <div id="loading">
-        <div class="loader"></div>
-        <p id="loadingText">جاري مزامنة البيانات مع جوجل شيت...</p>
+    <div id="loadingOverlay">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+        <h5 class="mt-3 text-primary" id="loadingText">جاري مزامنة البيانات...</h5>
     </div>
 
-    <!-- Add/Edit Form -->
-    <div class="card" id="formCard">
-        <h3 id="formTitle">➕ إضافة بند جديد</h3>
-        <form id="expenseForm">
-            <div class="grid-form">
-                <div class="input-group">
-                    <label>الفئة</label>
-                    <select id="category" required>
-                        <option value="أجهزة وأثاث">أجهزة وأثاث</option>
-                        <option value="مواد بناء وخامات">مواد بناء وخامات</option>
-                        <option value="مصنعيات وعمالة">مصنعيات وعمالة</option>
-                        <option value="مناسبات">مناسبات</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>اسم البند</label>
-                    <input type="text" id="itemName" required>
-                </div>
-                <div class="input-group">
-                    <label>المبلغ (ج.م)</label>
-                    <input type="number" id="itemAmount" required>
-                </div>
-                <div class="input-group">
-                    <label>التفاصيل</label>
-                    <input type="text" id="itemNotes" placeholder="-">
+    <header class="header-bg text-center position-relative">
+        <div class="container">
+            <h1 class="fw-bold">🏠 داشبورد مصاريف التشطيب</h1>
+            <p class="mb-0 opacity-75">مربوط بجوجل شيت | متوافق مع الموبايل</p>
+            <button id="adminToggleBtn" class="btn btn-warning position-absolute top-50 start-0 translate-middle-y ms-3 shadow-sm fw-bold" onclick="toggleAdmin()">
+                🔒 إدارة
+            </button>
+        </div>
+    </header>
+
+    <div class="container pb-5">
+        
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card stat-card total h-100 text-center p-3">
+                    <h6 class="text-muted">الإجمالي الكلي</h6>
+                    <h3 class="text-success fw-bold mb-0" id="totalSum">0</h3>
                 </div>
             </div>
-            <button type="submit" class="btn btn-add" id="submitBtn">حفظ ورفع لجوجل شيت</button>
-            <button type="button" class="btn" id="cancelEditBtn" style="display:none; width: 100%; margin-top: 10px; background: #95a5a6; color: white;" onclick="cancelEdit()">إلغاء التعديل</button>
-        </form>
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100 text-center p-3">
+                    <h6 class="text-muted">أجهزة وأثاث</h6>
+                    <h4 class="text-primary fw-bold mb-0" id="cat1Sum">0</h4>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100 text-center p-3" style="border-bottom-color:#fd7e14">
+                    <h6 class="text-muted">مواد وخامات</h6>
+                    <h4 class="text-warning fw-bold mb-0" id="cat2Sum" style="color:#fd7e14 !important">0</h4>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card stat-card h-100 text-center p-3" style="border-bottom-color:#6f42c1">
+                    <h6 class="text-muted">مصنعيات ومناسبات</h6>
+                    <h4 class="text-purple fw-bold mb-0" id="cat3Sum" style="color:#6f42c1">0</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-4 d-none" id="adminPanel">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+                <h5 class="text-primary fw-bold" id="formTitle">➕ إضافة بند جديد</h5>
+            </div>
+            <div class="card-body">
+                <form id="expenseForm">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">الفئة</label>
+                            <select id="category" class="form-select" required>
+                                <option value="أجهزة وأثاث">أجهزة وأثاث</option>
+                                <option value="مواد بناء وخامات">مواد بناء وخامات</option>
+                                <option value="مصنعيات وعمالة">مصنعيات وعمالة</option>
+                                <option value="مناسبات">مناسبات</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">اسم البند</label>
+                            <input type="text" id="itemName" class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">المبلغ (ج.م)</label>
+                            <input type="number" id="itemAmount" class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">التفاصيل / ملاحظات</label>
+                            <input type="text" id="itemNotes" class="form-control" placeholder="-">
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-success fw-bold px-4" id="submitBtn">حفظ البيانات</button>
+                        <button type="button" class="btn btn-secondary fw-bold px-4 d-none" id="cancelEditBtn" onclick="cancelEdit()">إلغاء التعديل</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="tablesContainer"></div>
+
     </div>
 
-    <!-- Stats Dashboard -->
-    <div class="dashboard">
-        <div class="stat-card total">
-            <h3>الإجمالي الكلي</h3>
-            <p id="totalSum">0</p>
-        </div>
-        <div class="stat-card">
-            <h3>أجهزة وأثاث</h3>
-            <p id="cat1Sum">0</p>
-        </div>
-        <div class="stat-card">
-            <h3>مواد وخامات</h3>
-            <p id="cat2Sum">0</p>
-        </div>
-        <div class="stat-card">
-            <h3>مصنعيات ومناسبات</h3>
-            <p id="cat3Sum">0</p>
-        </div>
-    </div>
+    <script>
+        // ⚠️⚠️⚠️ حط الرابط اللي أخدته من جوجل هنا ⚠️⚠️⚠️
+            const GOOGLE_APP_URL = "https://script.google.com/macros/s/AKfycbxeH0B9ZYjjUWFUNsfT00H-VMd76uHZr9hSCSdNM1zxZGsBL7gNXqqPiwQHfjx5tSfy/exec";
+        let expenses = [];
+        let editingId = null;
+        
+        // نظام الحماية
+        let isAdmin = false;
+        let currentPassword = "";
 
-    <!-- Tables Container -->
-    <div id="tablesContainer"></div>
-
-</div>
-
-<script>
-    // ⚠️⚠️⚠️ حط الرابط اللي أخدته من جوجل هنا ⚠️⚠️⚠️
-    const GOOGLE_APP_URL = "https://script.google.com/macros/s/AKfycbxeH0B9ZYjjUWFUNsfT00H-VMd76uHZr9hSCSdNM1zxZGsBL7gNXqqPiwQHfjx5tSfy/exec";
-
-    let expenses = [];
-    let editingId = null; // متغير عشان نعرف إحنا بنضيف ولا بنعدل
-
-    // دالة إظهار وإخفاء التحميل
-    function showLoading(text) {
-        document.getElementById('loadingText').innerText = text;
-        document.getElementById('loading').style.display = 'block';
-    }
-    function hideLoading() {
-        document.getElementById('loading').style.display = 'none';
-    }
-
-    // 1. تحميل البيانات
-    async function loadData() {
-        if(GOOGLE_APP_URL === "ضع_الرابط_هنا") {
-            alert("لا تنسى وضع رابط الـ Web App الخاص بجوجل في الكود!"); return;
+        function showLoading(text = "جاري التحميل...") {
+            document.getElementById('loadingText').innerText = text;
+            document.getElementById('loadingOverlay').style.display = 'flex';
         }
-        showLoading("جاري سحب البيانات من السحابة...");
-        try {
-            let response = await fetch(GOOGLE_APP_URL);
-            let data = await response.json();
-            expenses = data;
-            updateUI();
-        } catch (error) { alert("حدث خطأ أثناء تحميل البيانات."); } 
-        finally { hideLoading(); }
-    }
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
 
-    // تحديث الشاشة
-    function updateUI() {
-        let total = 0, c1 = 0, c2 = 0, c3 = 0;
-        const groups = { "أجهزة وأثاث": [], "مواد بناء وخامات": [], "مصنعيات وعمالة": [], "مناسبات": [] };
+        // تسجيل الدخول (Admin)
+        function toggleAdmin() {
+            if(isAdmin) {
+                // تسجيل خروج
+                isAdmin = false;
+                currentPassword = "";
+                document.getElementById('adminToggleBtn').innerHTML = "🔒 إدارة";
+                document.getElementById('adminToggleBtn').classList.replace('btn-danger', 'btn-warning');
+                document.getElementById('adminPanel').classList.add('d-none');
+                updateUI();
+                return;
+            }
 
-        expenses.forEach(e => {
-            let amt = parseFloat(e.amount) || 0;
-            total += amt;
-            if(e.category === "أجهزة وأثاث") c1 += amt;
-            if(e.category === "مواد بناء وخامات") c2 += amt;
-            if(e.category === "مصنعيات وعمالة" || e.category === "مناسبات") c3 += amt;
-            if(groups[e.category]) groups[e.category].push(e);
-        });
+            let p = prompt("أدخل كلمة المرور لإدارة المصاريف (إضافة/تعديل/حذف):");
+            if(p) {
+                currentPassword = p;
+                isAdmin = true;
+                document.getElementById('adminToggleBtn').innerHTML = "🔓 خروج";
+                document.getElementById('adminToggleBtn').classList.replace('btn-warning', 'btn-danger');
+                document.getElementById('adminPanel').classList.remove('d-none');
+                updateUI(); // عشان نظهر زراير التعديل في الجداول
+            }
+        }
 
-        document.getElementById('totalSum').innerText = total.toLocaleString() + " ج.م";
-        document.getElementById('cat1Sum').innerText = c1.toLocaleString() + " ج.م";
-        document.getElementById('cat2Sum').innerText = c2.toLocaleString() + " ج.م";
-        document.getElementById('cat3Sum').innerText = c3.toLocaleString() + " ج.م";
+        async function loadData() {
+            if(GOOGLE_APP_URL === "ضع_الرابط_هنا") { alert("لا تنسى وضع رابط جوجل!"); return; }
+            showLoading("جاري سحب البيانات...");
+            try {
+                let response = await fetch(GOOGLE_APP_URL);
+                expenses = await response.json();
+                updateUI();
+            } catch (error) { alert("حدث خطأ أثناء تحميل البيانات."); } 
+            finally { hideLoading(); }
+        }
 
-        const container = document.getElementById('tablesContainer');
-        container.innerHTML = "";
+        function updateUI() {
+            let total = 0, c1 = 0, c2 = 0, c3 = 0;
+            const groups = { "أجهزة وأثاث": [], "مواد بناء وخامات": [], "مصنعيات وعمالة": [], "مناسبات": [] };
 
-        for(let cat in groups) {
-            if(groups[cat].length === 0) continue;
-            let html = `<div class="card"><h3>${cat}</h3><table><thead><tr><th>البند</th><th>التفاصيل</th><th>المبلغ</th><th style="text-align:center">إجراء</th></tr></thead><tbody>`;
-            groups[cat].forEach(item => {
-                html += `
-                <tr>
-                    <td class="item-name">${item.name}</td>
-                    <td class="item-details">${item.details}</td>
-                    <td class="amount">${parseFloat(item.amount).toLocaleString()}</td>
-                    <td style="text-align:center; min-width: 120px;">
-                        <button class="btn action-btn btn-edit" onclick="startEdit(${item.id})">✏️ تعديل</button>
-                        <button class="btn action-btn btn-delete" onclick="deleteItem(${item.id})">🗑️ حذف</button>
-                    </td>
-                </tr>`;
+            expenses.forEach(e => {
+                let amt = parseFloat(e.amount) || 0;
+                total += amt;
+                if(e.category === "أجهزة وأثاث") c1 += amt;
+                if(e.category === "مواد بناء وخامات") c2 += amt;
+                if(e.category === "مصنعيات وعمالة" || e.category === "مناسبات") c3 += amt;
+                if(groups[e.category]) groups[e.category].push(e);
             });
-            html += `</tbody></table></div>`;
-            container.innerHTML += html;
+
+            document.getElementById('totalSum').innerText = total.toLocaleString();
+            document.getElementById('cat1Sum').innerText = c1.toLocaleString();
+            document.getElementById('cat2Sum').innerText = c2.toLocaleString();
+            document.getElementById('cat3Sum').innerText = c3.toLocaleString();
+
+            const container = document.getElementById('tablesContainer');
+            container.innerHTML = "";
+
+            for(let cat in groups) {
+                if(groups[cat].length === 0) continue;
+                
+                let html = `
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-0 pt-3">
+                        <h5 class="fw-bold text-secondary mb-0">${cat}</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-custom mb-0 align-middle">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-3">البند</th>
+                                        <th>التفاصيل</th>
+                                        <th>المبلغ</th>
+                                        ${isAdmin ? '<th class="text-center">إجراء</th>' : ''}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+
+                groups[cat].forEach(item => {
+                    html += `
+                    <tr>
+                        <td class="ps-3 fw-semibold">${item.name}</td>
+                        <td class="text-muted small">${item.details}</td>
+                        <td class="amount-text text-primary">${parseFloat(item.amount).toLocaleString()}</td>
+                        ${isAdmin ? `
+                        <td class="text-center text-nowrap">
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="startEdit(${item.id})">✏️</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${item.id})">🗑️</button>
+                        </td>` : ''}
+                    </tr>`;
+                });
+
+                html += `</tbody></table></div></div></div>`;
+                container.innerHTML += html;
+            }
         }
-    }
 
-    // 2. الحفظ (سواء إضافة جديدة أو تعديل)
-    document.getElementById('expenseForm').onsubmit = async function(e) {
-        e.preventDefault();
-        let btn = document.getElementById('submitBtn');
-        btn.disabled = true;
+        document.getElementById('expenseForm').onsubmit = async function(e) {
+            e.preventDefault();
+            
+            let payload = {
+                action: editingId ? "edit" : "add",
+                id: editingId ? editingId : Date.now(),
+                password: currentPassword, // إرسال الباسوورد للتحقق
+                category: document.getElementById('category').value,
+                name: document.getElementById('itemName').value,
+                amount: document.getElementById('itemAmount').value,
+                details: document.getElementById('itemNotes').value || "-"
+            };
 
-        let payload = {
-            action: editingId ? "edit" : "add",
-            id: editingId ? editingId : Date.now(),
-            category: document.getElementById('category').value,
-            name: document.getElementById('itemName').value,
-            amount: document.getElementById('itemAmount').value,
-            details: document.getElementById('itemNotes').value || "-"
+            showLoading("جاري الحفظ...");
+
+            try {
+                let res = await fetch(GOOGLE_APP_URL, { method: "POST", body: JSON.stringify(payload) });
+                let result = await res.json();
+
+                if(result.status === "error") {
+                    alert(result.message); // الباسوورد غلط
+                    hideLoading();
+                    return;
+                }
+                
+                if(editingId) {
+                    let index = expenses.findIndex(x => x.id == editingId);
+                    expenses[index] = payload;
+                    cancelEdit();
+                } else {
+                    expenses.push(payload);
+                }
+                
+                updateUI();
+                this.reset();
+            } catch(err) { alert("حدث خطأ في الاتصال."); } 
+            finally { hideLoading(); }
         };
 
-        btn.innerText = "جاري التحديث في جوجل شيت ☁️...";
+        async function deleteItem(id) {
+            if(!confirm("متأكد من حذف البند؟")) return;
+            
+            showLoading("جاري الحذف...");
+            try {
+                let res = await fetch(GOOGLE_APP_URL, { 
+                    method: "POST", 
+                    body: JSON.stringify({ action: "delete", id: id, password: currentPassword }) 
+                });
+                let result = await res.json();
+                
+                if(result.status === "error") {
+                    alert(result.message);
+                    hideLoading();
+                    return;
+                }
 
-        try {
-            await fetch(GOOGLE_APP_URL, { method: "POST", body: JSON.stringify(payload) });
-            
-            // تحديث البيانات على الشاشة فوراً
-            if(editingId) {
-                let index = expenses.findIndex(x => x.id == editingId);
-                expenses[index] = payload;
-                cancelEdit(); // نرجع للوضع العادي
-            } else {
-                expenses.push(payload);
-            }
-            
-            updateUI();
-            this.reset();
-        } catch(err) { alert("حدث خطأ، يرجى المحاولة مرة أخرى."); } 
-        finally {
-            btn.disabled = false;
-            if(!editingId) btn.innerText = "حفظ ورفع لجوجل شيت";
+                expenses = expenses.filter(x => x.id != id);
+                updateUI();
+            } catch(err) { alert("حدث خطأ."); }
+            finally { hideLoading(); }
         }
-    };
 
-    // 3. أمر الحذف
-    async function deleteItem(id) {
-        if(!confirm("متأكد إنك عايز تحذف البند ده نهائياً؟")) return;
-        
-        showLoading("جاري الحذف من جوجل شيت...");
-        try {
-            await fetch(GOOGLE_APP_URL, { 
-                method: "POST", 
-                body: JSON.stringify({ action: "delete", id: id }) 
-            });
-            expenses = expenses.filter(x => x.id != id);
-            updateUI();
-        } catch(err) { alert("حدث خطأ أثناء الحذف."); }
-        finally { hideLoading(); }
-    }
+        function startEdit(id) {
+            let item = expenses.find(x => x.id == id);
+            if(!item) return;
 
-    // 4. تجهيز فورم التعديل
-    function startEdit(id) {
-        let item = expenses.find(x => x.id == id);
-        if(!item) return;
+            editingId = id;
+            document.getElementById('category').value = item.category;
+            document.getElementById('itemName').value = item.name;
+            document.getElementById('itemAmount').value = item.amount;
+            document.getElementById('itemNotes').value = item.details !== "-" ? item.details : "";
 
-        editingId = id;
-        document.getElementById('category').value = item.category;
-        document.getElementById('itemName').value = item.name;
-        document.getElementById('itemAmount').value = item.amount;
-        document.getElementById('itemNotes').value = item.details !== "-" ? item.details : "";
+            document.getElementById('formTitle').innerText = "✏️ تعديل البند";
+            document.getElementById('submitBtn').innerText = "تحديث";
+            document.getElementById('cancelEditBtn').classList.remove('d-none');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
-        document.getElementById('formTitle').innerText = "✏️ تعديل البند";
-        document.getElementById('formCard').style.borderRight = "5px solid var(--warning)";
-        
-        let submitBtn = document.getElementById('submitBtn');
-        submitBtn.innerText = "تحديث البيانات";
-        submitBtn.classList.remove('btn-add');
-        submitBtn.classList.add('btn-edit-mode');
-        
-        document.getElementById('cancelEditBtn').style.display = "block";
-        window.scrollTo(0, 0); // نطلع لفوق عند الفورم
-    }
+        function cancelEdit() {
+            editingId = null;
+            document.getElementById('expenseForm').reset();
+            document.getElementById('formTitle').innerText = "➕ إضافة بند جديد";
+            document.getElementById('submitBtn').innerText = "حفظ البيانات";
+            document.getElementById('cancelEditBtn').classList.add('d-none');
+        }
 
-    // إلغاء التعديل والرجوع للإضافة
-    function cancelEdit() {
-        editingId = null;
-        document.getElementById('expenseForm').reset();
-        document.getElementById('formTitle').innerText = "➕ إضافة بند جديد";
-        document.getElementById('formCard').style.borderRight = "none";
-        
-        let submitBtn = document.getElementById('submitBtn');
-        submitBtn.innerText = "حفظ ورفع لجوجل شيت";
-        submitBtn.classList.remove('btn-edit-mode');
-        submitBtn.classList.add('btn-add');
-        
-        document.getElementById('cancelEditBtn').style.display = "none";
-    }
-
-    // تشغيل التطبيق
-    window.onload = loadData;
-</script>
+        window.onload = loadData;
+    </script>
 </body>
 </html>
