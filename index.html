@@ -1,21 +1,80 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>حسابات التشطيب الذكية</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .header-bg { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; border-radius: 0 0 20px 20px; padding: 30px 0; margin-bottom: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .stat-card { border-radius: 15px; border: none; border-bottom: 4px solid #0d6efd; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; }
-        .stat-card:hover { transform: translateY(-5px); }
-        .stat-card.total { border-bottom-color: #198754; }
-        .amount-text { font-family: monospace; font-weight: bold; font-size: 1.1rem; }
-        .table-custom th { background-color: #f1f4f8; color: #495057; }
-        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; display: none; }
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .header-bg {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border-radius: 0 0 20px 20px;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card {
+            border-radius: 15px;
+            border: none;
+            border-bottom: 4px solid #0d6efd;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card.total {
+            border-bottom-color: #198754;
+        }
+
+        .amount-text {
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .table-custom th {
+            background-color: #f1f4f8;
+            color: #495057;
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            display: none;
+        }
+        @media screen and (max-width : 768px) {
+            .header-bg h1 {
+                font-size: 1.2rem;
+            }
+            .header-bg button {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.8rem;
+            }
+            
+        }
     </style>
 </head>
+
 <body>
 
     <div id="loadingOverlay">
@@ -26,15 +85,16 @@
     <header class="header-bg text-center position-relative">
         <div class="container">
             <h1 class="fw-bold">🏠 داشبورد مصاريف التشطيب</h1>
-            <p class="mb-0 opacity-75">مربوط بجوجل شيت | متوافق مع الموبايل</p>
-            <button id="adminToggleBtn" class="btn btn-warning position-absolute top-50 start-0 translate-middle-y ms-3 shadow-sm fw-bold" onclick="toggleAdmin()">
+            <button id="adminToggleBtn"
+                class="btn btn-warning position-absolute top-50 start-0 translate-middle-y ms-3 shadow-sm fw-bold"
+                onclick="toggleAdmin()">
                 🔒 إدارة
             </button>
         </div>
     </header>
 
     <div class="container pb-5">
-        
+
         <div class="row g-3 mb-4">
             <div class="col-6 col-md-3">
                 <div class="card stat-card total h-100 text-center p-3">
@@ -93,7 +153,8 @@
                     </div>
                     <div class="mt-3">
                         <button type="submit" class="btn btn-success fw-bold px-4" id="submitBtn">حفظ البيانات</button>
-                        <button type="button" class="btn btn-secondary fw-bold px-4 d-none" id="cancelEditBtn" onclick="cancelEdit()">إلغاء التعديل</button>
+                        <button type="button" class="btn btn-secondary fw-bold px-4 d-none" id="cancelEditBtn"
+                            onclick="cancelEdit()">إلغاء التعديل</button>
                     </div>
                 </form>
             </div>
@@ -105,10 +166,10 @@
 
     <script>
         // ⚠️⚠️⚠️ حط الرابط اللي أخدته من جوجل هنا ⚠️⚠️⚠️
-            const GOOGLE_APP_URL = "https://script.google.com/macros/s/AKfycbxeH0B9ZYjjUWFUNsfT00H-VMd76uHZr9hSCSdNM1zxZGsBL7gNXqqPiwQHfjx5tSfy/exec";
+        const GOOGLE_APP_URL = "https://script.google.com/macros/s/AKfycbxO2kSTf-GZLL2oVs6obnkXv31fQtfuRxyLsF_VyGDOjesnvLS2379t_HDzN-toJags/exec";
         let expenses = [];
         let editingId = null;
-        
+
         // نظام الحماية
         let isAdmin = false;
         let currentPassword = "";
@@ -123,7 +184,7 @@
 
         // تسجيل الدخول (Admin)
         function toggleAdmin() {
-            if(isAdmin) {
+            if (isAdmin) {
                 // تسجيل خروج
                 isAdmin = false;
                 currentPassword = "";
@@ -135,7 +196,7 @@
             }
 
             let p = prompt("أدخل كلمة المرور لإدارة المصاريف (إضافة/تعديل/حذف):");
-            if(p) {
+            if (p) {
                 currentPassword = p;
                 isAdmin = true;
                 document.getElementById('adminToggleBtn').innerHTML = "🔓 خروج";
@@ -146,13 +207,13 @@
         }
 
         async function loadData() {
-            if(GOOGLE_APP_URL === "ضع_الرابط_هنا") { alert("لا تنسى وضع رابط جوجل!"); return; }
+            if (GOOGLE_APP_URL === "ضع_الرابط_هنا") { alert("لا تنسى وضع رابط جوجل!"); return; }
             showLoading("جاري سحب البيانات...");
             try {
                 let response = await fetch(GOOGLE_APP_URL);
                 expenses = await response.json();
                 updateUI();
-            } catch (error) { alert("حدث خطأ أثناء تحميل البيانات."); } 
+            } catch (error) { alert("حدث خطأ أثناء تحميل البيانات."); }
             finally { hideLoading(); }
         }
 
@@ -163,10 +224,10 @@
             expenses.forEach(e => {
                 let amt = parseFloat(e.amount) || 0;
                 total += amt;
-                if(e.category === "أجهزة وأثاث") c1 += amt;
-                if(e.category === "مواد بناء وخامات") c2 += amt;
-                if(e.category === "مصنعيات وعمالة" || e.category === "مناسبات") c3 += amt;
-                if(groups[e.category]) groups[e.category].push(e);
+                if (e.category === "أجهزة وأثاث") c1 += amt;
+                if (e.category === "مواد بناء وخامات") c2 += amt;
+                if (e.category === "مصنعيات وعمالة" || e.category === "مناسبات") c3 += amt;
+                if (groups[e.category]) groups[e.category].push(e);
             });
 
             document.getElementById('totalSum').innerText = total.toLocaleString();
@@ -177,9 +238,9 @@
             const container = document.getElementById('tablesContainer');
             container.innerHTML = "";
 
-            for(let cat in groups) {
-                if(groups[cat].length === 0) continue;
-                
+            for (let cat in groups) {
+                if (groups[cat].length === 0) continue;
+
                 let html = `
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-header bg-white border-0 pt-3">
@@ -218,9 +279,9 @@
             }
         }
 
-        document.getElementById('expenseForm').onsubmit = async function(e) {
+        document.getElementById('expenseForm').onsubmit = async function (e) {
             e.preventDefault();
-            
+
             let payload = {
                 action: editingId ? "edit" : "add",
                 id: editingId ? editingId : Date.now(),
@@ -237,38 +298,38 @@
                 let res = await fetch(GOOGLE_APP_URL, { method: "POST", body: JSON.stringify(payload) });
                 let result = await res.json();
 
-                if(result.status === "error") {
+                if (result.status === "error") {
                     alert(result.message); // الباسوورد غلط
                     hideLoading();
                     return;
                 }
-                
-                if(editingId) {
+
+                if (editingId) {
                     let index = expenses.findIndex(x => x.id == editingId);
                     expenses[index] = payload;
                     cancelEdit();
                 } else {
                     expenses.push(payload);
                 }
-                
+
                 updateUI();
                 this.reset();
-            } catch(err) { alert("حدث خطأ في الاتصال."); } 
+            } catch (err) { alert("حدث خطأ في الاتصال."); }
             finally { hideLoading(); }
         };
 
         async function deleteItem(id) {
-            if(!confirm("متأكد من حذف البند؟")) return;
-            
+            if (!confirm("متأكد من حذف البند؟")) return;
+
             showLoading("جاري الحذف...");
             try {
-                let res = await fetch(GOOGLE_APP_URL, { 
-                    method: "POST", 
-                    body: JSON.stringify({ action: "delete", id: id, password: currentPassword }) 
+                let res = await fetch(GOOGLE_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: "delete", id: id, password: currentPassword })
                 });
                 let result = await res.json();
-                
-                if(result.status === "error") {
+
+                if (result.status === "error") {
                     alert(result.message);
                     hideLoading();
                     return;
@@ -276,13 +337,13 @@
 
                 expenses = expenses.filter(x => x.id != id);
                 updateUI();
-            } catch(err) { alert("حدث خطأ."); }
+            } catch (err) { alert("حدث خطأ."); }
             finally { hideLoading(); }
         }
 
         function startEdit(id) {
             let item = expenses.find(x => x.id == id);
-            if(!item) return;
+            if (!item) return;
 
             editingId = id;
             document.getElementById('category').value = item.category;
@@ -293,7 +354,7 @@
             document.getElementById('formTitle').innerText = "✏️ تعديل البند";
             document.getElementById('submitBtn').innerText = "تحديث";
             document.getElementById('cancelEditBtn').classList.remove('d-none');
-            
+
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -308,4 +369,5 @@
         window.onload = loadData;
     </script>
 </body>
+
 </html>
