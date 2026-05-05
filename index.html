@@ -70,7 +70,12 @@
                 padding: 0.25rem 0.5rem;
                 font-size: 0.8rem;
             }
-            
+            .amount-text {
+                font-size: 0.8rem;
+            }
+            .item-name {
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
@@ -263,8 +268,8 @@
                 groups[cat].forEach(item => {
                     html += `
                     <tr>
-                        <td class="ps-3 fw-semibold">${item.name}</td>
-                        <td class="text-muted small">${item.details}</td>
+                        <td class="ps-3 fw-semibold item-name">${item.name}</td>
+                        <td class="text-muted small item-name">${item.details}</td>
                         <td class="amount-text text-primary">${parseFloat(item.amount).toLocaleString()}</td>
                         ${isAdmin ? `
                         <td class="text-center text-nowrap">
